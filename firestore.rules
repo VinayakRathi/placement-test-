@@ -1,0 +1,79 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: userId (uid)
+// Fields:
+//   - uid: string (required)
+//   - email: string (required)
+//   - displayName: string
+//   - level: int (required)
+//   - exp: int (required)
+//   - currentLanguage: string
+//   - stats: map
+//
+// Collection: quests
+// Document ID: questId
+// Fields:
+//   - userId: string (required)
+//   - level: int (required)
+//   - type: string (required)
+//   - language: string
+//   - prompt: string
+//   - userResponse: string
+//   - feedback: string
+//   - score: int
+//   - status: string (required)
+//   - createdAt: timestamp (required)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'level', 'exp']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.level is int &&
+             data.exp is int;
+    }
+
+    function isValidQuest(data) {
+      return data.keys().hasAll(['userId', 'level', 'type', 'status', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.level is int &&
+             data.type in ['challenge', 'interview', 'project'] &&
+             data.status in ['active', 'completed', 'failed'];
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /quests/{questId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidQuest(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && isValidQuest(request.resource.data);
+    }
+    
+    // Default admin access
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "vinayakrathi156@gmail.com" && request.auth.token.email_verified == true));
+    }
+  }
+}

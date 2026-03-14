@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile tracking progress and stats.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "level": { "type": "integer", "description": "Current overall level (1-100)" },
+        "exp": { "type": "integer", "description": "Experience points" },
+        "currentLanguage": { "type": "string" },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "dsa": { "type": "integer" },
+            "algorithms": { "type": "integer" },
+            "systemDesign": { "type": "integer" }
+          }
+        }
+      },
+      "required": ["uid", "email", "level", "exp"]
+    },
+    "Quest": {
+      "title": "Quest",
+      "description": "A coding challenge or interview session.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "level": { "type": "integer" },
+        "type": { "type": "string", "enum": ["challenge", "interview", "project"] },
+        "language": { "type": "string" },
+        "prompt": { "type": "string" },
+        "userResponse": { "type": "string" },
+        "feedback": { "type": "string" },
+        "score": { "type": "integer" },
+        "status": { "type": "string", "enum": ["active", "completed", "failed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "level", "type", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/quests/{questId}": {
+      "schema": "Quest",
+      "description": "History of quests and challenges"
+    }
+  }
+}
